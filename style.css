@@ -1132,20 +1132,23 @@ img {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 10px;
+  padding: 5px 12px;
   border-radius: var(--radius-full);
   background: var(--accent-blue-subtle);
   color: var(--accent-blue);
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   margin-bottom: 8px;
 }
 
-.qr-pass-badge svg {
+.qr-pass-badge svg,
+.apple-logo-badge-icon {
   width: 14px;
   height: 14px;
+  flex-shrink: 0;
+  fill: currentColor;
 }
 
 .qr-pass-title {
