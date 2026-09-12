@@ -2,26 +2,25 @@
   "personal": {
     "name": "Ahmed Nabil",
     "prefix": "Mr.",
-    "title": "Operations & Commercial",
-    "department": "Logistics & Terminal Operations",
+    "title": "Operations manager",
+    "department": "Logistics Operations",
     "company": "Medscan Terminal",
     "tagline": "Specialized Integrated Logistics & Cold Chain Solutions",
     "bio": "Dedicated operations leader specializing in freight forwarding, terminal warehousing, supply chain optimization, and specialized logistics across Saudi Arabia & the GCC.",
-    "profileImage": "img/profile.jpg",
+    "profileImage": "img/profile.jpeg",
     "companyLogo": "img/medscan_terminal_company_logo-2.jpg",
     "companyBadge": "img/medscan_terminal_company_logo.jpg"
   },
   "contact": {
     "phone": "+966 56 104 9774",
     "phoneRaw": "+966561049774",
-    "altPhone": "+966 13 800 0000",
-    "altPhoneRaw": "+966138000000",
     "whatsapp": "+966 56 104 9774",
     "whatsappRaw": "966561049774",
-    "email": "ahmed.nabil@medscansa.com",
+    "email": "ahmed.n@medscansa.com",
+    "personalEmail": "Ahmednabilm574@gmail.com",
     "website": "https://medscansa.com",
     "websiteDisplay": "www.medscansa.com",
-    "location": "Dammam 2nd Industrial City, Eastern Province, Saudi Arabia",
+    "location": "MEDSCAN TERMINAL",
     "mapsUrl": "https://maps.google.com/?q=Medscan+Terminal+Saudi+Arabia"
   },
   "social": [
@@ -38,10 +37,16 @@
       "label": "Chat on WhatsApp"
     },
     {
-      "platform": "Email",
+      "platform": "Corporate Email",
       "icon": "mail",
-      "url": "mailto:ahmed.nabil@medscansa.com",
-      "label": "Send Email"
+      "url": "mailto:ahmed.n@medscansa.com",
+      "label": "Send Corporate Email"
+    },
+    {
+      "platform": "Personal Email",
+      "icon": "mail",
+      "url": "mailto:Ahmednabilm574@gmail.com",
+      "label": "Send Personal Email"
     },
     {
       "platform": "Website",

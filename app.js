@@ -7,27 +7,26 @@
 const DEFAULT_DATA = {
   personal: {
     name: "Ahmed Nabil",
-    prefix: "Eng.",
-    title: "Operations & Commercial",
-    department: "Logistics & Terminal Operations",
+    prefix: "Mr.",
+    title: "Operations manager",
+    department: "Logistics Operations",
     company: "Medscan Terminal",
     tagline: "Specialized Integrated Logistics & Cold Chain Solutions",
     bio: "Dedicated operations leader specializing in freight forwarding, terminal warehousing, supply chain optimization, and specialized logistics across Saudi Arabia & the GCC.",
-    profileImage: "img/profile.jpg",
+    profileImage: "img/profile.jpeg",
     companyLogo: "img/medscan_terminal_company_logo-2.jpg",
     companyBadge: "img/medscan_terminal_company_logo.jpg"
   },
   contact: {
     phone: "+966 56 104 9774",
     phoneRaw: "+966561049774",
-    altPhone: "+966 13 800 0000",
-    altPhoneRaw: "+966138000000",
     whatsapp: "+966 56 104 9774",
     whatsappRaw: "966561049774",
-    email: "ahmed.nabil@medscansa.com",
+    email: "ahmed.n@medscansa.com",
+    personalEmail: "Ahmednabilm574@gmail.com",
     website: "https://medscansa.com",
     websiteDisplay: "www.medscansa.com",
-    location: "Dammam 2nd Industrial City, Eastern Province, Saudi Arabia",
+    location: "MEDSCAN TERMINAL",
     mapsUrl: "https://maps.google.com/?q=Medscan+Terminal+Saudi+Arabia"
   },
   social: [
@@ -44,10 +43,16 @@ const DEFAULT_DATA = {
       label: "Chat on WhatsApp"
     },
     {
-      platform: "Email",
+      platform: "Corporate Email",
       icon: "mail",
-      url: "mailto:ahmed.nabil@medscansa.com",
-      label: "Send Email"
+      url: "mailto:ahmed.n@medscansa.com",
+      label: "Send Corporate Email"
+    },
+    {
+      platform: "Personal Email",
+      icon: "mail",
+      url: "mailto:Ahmednabilm574@gmail.com",
+      label: "Send Personal Email"
     },
     {
       platform: "Website",
@@ -245,15 +250,21 @@ function renderCard() {
   const textPhone = document.getElementById("textPhone");
   if (textPhone) textPhone.textContent = contact.phone;
 
-  const linkAltPhone = document.getElementById("linkAltPhone");
-  if (linkAltPhone) linkAltPhone.href = `tel:${cleanAlt}`;
-  const textAltPhone = document.getElementById("textAltPhone");
-  if (textAltPhone) textAltPhone.textContent = contact.altPhone;
-
   const linkEmail = document.getElementById("linkEmail");
   if (linkEmail) linkEmail.href = `mailto:${contact.email}`;
   const textEmail = document.getElementById("textEmail");
   if (textEmail) textEmail.textContent = contact.email;
+
+  const linkPersonalEmail = document.getElementById("linkPersonalEmail");
+  if (linkPersonalEmail && contact.personalEmail) {
+    linkPersonalEmail.href = `mailto:${contact.personalEmail}`;
+    const itemPersonalEmail = linkPersonalEmail.closest(".contact-item");
+    if (itemPersonalEmail) itemPersonalEmail.style.display = "flex";
+  }
+  const textPersonalEmail = document.getElementById("textPersonalEmail");
+  if (textPersonalEmail && contact.personalEmail) {
+    textPersonalEmail.textContent = contact.personalEmail;
+  }
 
   const linkWebsite = document.getElementById("linkWebsite");
   if (linkWebsite) linkWebsite.href = contact.website;
@@ -307,9 +318,8 @@ function buildVCardString() {
   const { personal, contact } = cardData;
   const fullName = `${personal.prefix ? personal.prefix + " " : ""}${personal.name}`.trim();
   const cleanPhone = (contact.phoneRaw || contact.phone).replace(/\s+/g, "");
-  const cleanAlt = (contact.altPhoneRaw || contact.altPhone).replace(/\s+/g, "");
 
-  return [
+  const vcardLines = [
     "BEGIN:VCARD",
     "VERSION:3.0",
     `FN:${fullName}`,
@@ -317,13 +327,26 @@ function buildVCardString() {
     `TITLE:${personal.title}`,
     `ORG:${personal.company};${personal.department || ""}`,
     `TEL;TYPE=CELL,VOICE:${cleanPhone}`,
-    `TEL;TYPE=WORK,VOICE:${cleanAlt}`,
-    `EMAIL;TYPE=WORK,INTERNET:${contact.email}`,
+    `EMAIL;TYPE=WORK,INTERNET:${contact.email}`
+  ];
+
+  if (contact.personalEmail) {
+    vcardLines.push(`EMAIL;TYPE=HOME,INTERNET:${contact.personalEmail}`);
+  }
+
+  if (contact.altPhone) {
+    const cleanAlt = (contact.altPhoneRaw || contact.altPhone).replace(/\s+/g, "");
+    vcardLines.push(`TEL;TYPE=WORK,VOICE:${cleanAlt}`);
+  }
+
+  vcardLines.push(
     `URL;TYPE=WORK:${contact.website}`,
     `ADR;TYPE=WORK:;;${contact.location};;;;`,
     `NOTE:${personal.tagline || ""} - ${personal.bio || ""}`,
     "END:VCARD"
-  ].join("\r\n");
+  );
+
+  return vcardLines.join("\r\n");
 }
 
 /**
@@ -522,6 +545,8 @@ function setupEventListeners() {
         copyToClipboard(cardData.contact.altPhone, "Office desk number");
       } else if (type === "email") {
         copyToClipboard(cardData.contact.email, "Corporate email");
+      } else if (type === "personalEmail") {
+        copyToClipboard(cardData.contact.personalEmail, "Personal email");
       }
     });
   });
