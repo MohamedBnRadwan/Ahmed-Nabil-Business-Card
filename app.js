@@ -1,6 +1,6 @@
 /**
- * Ahmed Nabil - Digital Business Card Logic
- * Medscan Terminal
+ * Ahmed Nabil — Digital Business Card
+ * Dynamic Data Integration & Interactive Logic
  */
 
 // Default Fallback Data (ensures 100% offline & local file:// protocol compatibility)
@@ -13,7 +13,7 @@ const DEFAULT_DATA = {
     company: "Medscan Terminal",
     tagline: "Specialized Integrated Logistics & Cold Chain Solutions",
     bio: "Dedicated operations leader specializing in freight forwarding, terminal warehousing, supply chain optimization, and specialized logistics across Saudi Arabia & the GCC.",
-    profileImage: "img/profile.jpeg",
+    profileImage: "img/profile.png",
     companyLogo: "img/medscan_terminal_company_logo-2.jpg",
     companyBadge: "img/medscan_terminal_company_logo.jpg"
   },
@@ -75,101 +75,115 @@ const DEFAULT_DATA = {
   ]
 };
 
-// Current active card state
-let cardData = typeof window !== "undefined" && window.CARD_DATA ? JSON.parse(JSON.stringify(window.CARD_DATA)) : JSON.parse(JSON.stringify(DEFAULT_DATA));
-let mainQR = null;
-let modalQR = null;
-let toastTimeout = null;
-let currentTheme = "system"; // "system" | "light" | "dark"
+// Application State
+let cardData = typeof window !== "undefined" && window.CARD_DATA 
+  ? JSON.parse(JSON.stringify(window.CARD_DATA)) 
+  : JSON.parse(JSON.stringify(DEFAULT_DATA));
 
-// Initialize Application
+let mainQRInstance = null;
+let modalQRInstance = null;
+let toastTimer = null;
+let activeTheme = "light"; // Default theme: Light Mode
+
+// Service metadata helper with icons & descriptions
+const SERVICE_METADATA = {
+  "Terminal Storage & Handling": {
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>`,
+    desc: "Secure staging, cross-docking & high-capacity container handling"
+  },
+  "Cold Chain Warehousing": {
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>`,
+    desc: "Temperature-controlled pharmaceutical & perishable cold storage"
+  },
+  "Customs Clearance": {
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>`,
+    desc: "Rapid regulatory compliance, clearance & port documentation"
+  },
+  "Freight Forwarding & Transport": {
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>`,
+    desc: "Domestic & GCC multimodal fleet logistics & forwarding"
+  }
+};
+
+/**
+ * Entry Point
+ */
 document.addEventListener("DOMContentLoaded", async () => {
   initTheme();
   await loadData();
   renderCard();
   initQRCodes();
   setupEventListeners();
+  setupScrollNavbar();
+  updateFooterYear();
 });
 
 /**
- * Theme Manager: Auto System Preference + Manual Toggle Support
+ * 1. Theme Manager (Default: Light Mode)
  */
 function initTheme() {
-  const savedTheme = localStorage.getItem("medscan_card_theme") || "system";
-  currentTheme = savedTheme;
-
-  // Listen to OS / System color scheme changes
-  const systemPref = window.matchMedia("(prefers-color-scheme: dark)");
-  systemPref.addEventListener("change", () => {
-    if (currentTheme === "system") {
-      applyTheme("system", false);
-    }
-  });
-
-  applyTheme(currentTheme, false);
+  const saved = localStorage.getItem("ahmed_nabil_card_theme") || "light";
+  activeTheme = saved;
+  applyTheme(activeTheme, false);
 }
 
 function applyTheme(theme, notify = true) {
-  currentTheme = theme;
-  localStorage.setItem("medscan_card_theme", theme);
-  
-  const systemIsDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  const effectiveIsDark = theme === "system" ? systemIsDark : theme === "dark";
+  activeTheme = theme;
+  localStorage.setItem("ahmed_nabil_card_theme", theme);
+
+  const root = document.documentElement;
   const metaTheme = document.getElementById("themeColorMeta");
-  const iconDark = document.getElementById("themeIconDark");
-  const iconLight = document.getElementById("themeIconLight");
-  const btnToggle = document.getElementById("btnThemeToggle");
+  
+  // Navbar theme icons
+  const sunIcon = document.getElementById("themeIconSun");
+  const moonIcon = document.getElementById("themeIconMoon");
+  const toggleBtn = document.getElementById("btnThemeToggle");
 
-  if (theme === "system") {
-    document.documentElement.removeAttribute("data-theme");
-    if (btnToggle) btnToggle.title = `Theme: System (${systemIsDark ? "Dark" : "Light"}) - Click to switch`;
+  // Hero card theme icons
+  const heroSunIcon = document.getElementById("heroThemeIconSun");
+  const heroMoonIcon = document.getElementById("heroThemeIconMoon");
+  const heroToggleBtn = document.getElementById("btnHeroThemeToggle");
+
+  const titleText = theme === "dark" 
+    ? "Theme: Dark Mode — Click for Light Mode" 
+    : "Theme: Light Mode — Click for Dark Mode";
+
+  if (theme === "dark") {
+    root.setAttribute("data-theme", "dark");
   } else {
-    document.documentElement.setAttribute("data-theme", theme);
-    if (btnToggle) btnToggle.title = `Theme: ${theme === "light" ? "Light" : "Dark"} - Click to switch`;
+    root.setAttribute("data-theme", "light");
   }
 
-  // Update mobile browser toolbar color
+  if (toggleBtn) toggleBtn.title = titleText;
+  if (heroToggleBtn) heroToggleBtn.title = titleText;
+
+  // Update browser header theme color
   if (metaTheme) {
-    metaTheme.setAttribute("content", effectiveIsDark ? "#070B14" : "#F1F5F9");
+    metaTheme.setAttribute("content", theme === "dark" ? "#000000" : "#F5F5F7");
   }
 
-  // Update theme toggle icon
-  if (iconDark && iconLight) {
-    if (effectiveIsDark) {
-      iconDark.style.display = "block";
-      iconLight.style.display = "none";
-    } else {
-      iconDark.style.display = "none";
-      iconLight.style.display = "block";
-    }
-  }
+  // Update Navbar & Hero Icons
+  const isDark = theme === "dark";
+  if (sunIcon) sunIcon.style.display = isDark ? "none" : "block";
+  if (moonIcon) moonIcon.style.display = isDark ? "block" : "none";
+  if (heroSunIcon) heroSunIcon.style.display = isDark ? "none" : "block";
+  if (heroMoonIcon) heroMoonIcon.style.display = isDark ? "block" : "none";
 
   if (notify) {
-    if (theme === "system") {
-      showToast(`System Theme: ${systemIsDark ? "Dark" : "Light"} mode`);
-    } else {
-      showToast(`${theme === "light" ? "Light" : "Dark"} Mode enabled`);
-    }
+    showToast(`${theme === "light" ? "Light" : "Dark"} Mode enabled`);
   }
 }
 
-function cycleTheme() {
-  if (currentTheme === "system") {
-    applyTheme("light", true);
-  } else if (currentTheme === "light") {
-    applyTheme("dark", true);
-  } else {
-    applyTheme("system", true);
-  }
+function toggleTheme() {
+  applyTheme(activeTheme === "light" ? "dark" : "light", true);
 }
 
 /**
- * Load data from data.json (HTTP/HTTPS/DevServer) or data.js (Offline/file:// protocol)
+ * 2. Data Loading
  */
 async function loadData() {
-  // 1. Try fetching data.json dynamically
   try {
-    const response = await fetch("data.json?cache_bust=" + Date.now());
+    const response = await fetch("data.json?t=" + Date.now());
     if (response.ok) {
       const json = await response.json();
       if (json && json.personal) {
@@ -177,26 +191,31 @@ async function loadData() {
         return;
       }
     }
-  } catch (e) {
+  } catch (err) {
     // Expected on local file:/// protocol
   }
 
-  // 2. Check window.CARD_DATA (from data.js)
   if (typeof window !== "undefined" && window.CARD_DATA && window.CARD_DATA.personal) {
     cardData = window.CARD_DATA;
     return;
   }
 
-  // 3. Fallback to DEFAULT_DATA
   cardData = DEFAULT_DATA;
 }
 
 /**
- * Render all card elements dynamically from current cardData
+ * 3. Dynamic Rendering
  */
 function renderCard() {
   if (!cardData || !cardData.personal || !cardData.contact) return;
   const { personal, contact, services } = cardData;
+
+  // Top Navigation Bar Info
+  const elNavName = document.querySelector(".nav-profile-name");
+  if (elNavName) elNavName.textContent = personal.name;
+
+  const elNavTitle = document.querySelector(".nav-profile-title");
+  if (elNavTitle) elNavTitle.textContent = personal.title;
 
   // Personal Info
   const elName = document.getElementById("profileName");
@@ -214,24 +233,29 @@ function renderCard() {
   const elDept = document.getElementById("profileDepartment");
   if (elDept) elDept.textContent = personal.department || "";
 
+  const elCompany = document.getElementById("profileCompany");
+  if (elCompany) {
+    elCompany.textContent = "MEDSCAN";
+  }
+
   const elBio = document.getElementById("profileBio");
   if (elBio) elBio.textContent = personal.bio || "";
-  
+
+  // Images
   const elAvatar = document.getElementById("profileImage");
   if (elAvatar && personal.profileImage) {
     elAvatar.src = personal.profileImage;
     elAvatar.alt = personal.name;
   }
 
-  const elLogo = document.getElementById("companyLogo");
-  if (elLogo && personal.companyLogo) {
-    elLogo.src = personal.companyLogo;
-    elLogo.alt = personal.company;
+  const elNavAvatar = document.getElementById("navAvatarImage");
+  if (elNavAvatar && personal.profileImage) {
+    elNavAvatar.src = personal.profileImage;
+    elNavAvatar.alt = personal.name;
   }
 
-  // Clean strings for URLs
+  // Clean values for URLs
   const cleanPhone = (contact.phoneRaw || contact.phone || "").replace(/\s+/g, "");
-  const cleanAlt = (contact.altPhoneRaw || contact.altPhone || "").replace(/\s+/g, "");
   const cleanWA = (contact.whatsappRaw || contact.whatsapp || "").replace(/[^0-9]/g, "");
 
   // Quick Action Buttons
@@ -244,7 +268,7 @@ function renderCard() {
   const btnEmail = document.getElementById("btnQuickEmail");
   if (btnEmail) btnEmail.href = `mailto:${contact.email}`;
 
-  // Contact list items
+  // Contact list rows
   const linkPhone = document.getElementById("linkPhone");
   if (linkPhone) linkPhone.href = `tel:${cleanPhone}`;
   const textPhone = document.getElementById("textPhone");
@@ -254,17 +278,6 @@ function renderCard() {
   if (linkEmail) linkEmail.href = `mailto:${contact.email}`;
   const textEmail = document.getElementById("textEmail");
   if (textEmail) textEmail.textContent = contact.email;
-
-  const linkPersonalEmail = document.getElementById("linkPersonalEmail");
-  if (linkPersonalEmail && contact.personalEmail) {
-    linkPersonalEmail.href = `mailto:${contact.personalEmail}`;
-    const itemPersonalEmail = linkPersonalEmail.closest(".contact-item");
-    if (itemPersonalEmail) itemPersonalEmail.style.display = "flex";
-  }
-  const textPersonalEmail = document.getElementById("textPersonalEmail");
-  if (textPersonalEmail && contact.personalEmail) {
-    textPersonalEmail.textContent = contact.personalEmail;
-  }
 
   const linkWebsite = document.getElementById("linkWebsite");
   if (linkWebsite) linkWebsite.href = contact.website;
@@ -280,46 +293,78 @@ function renderCard() {
   const linkLocationBtn = document.getElementById("linkLocationBtn");
   if (linkLocationBtn) linkLocationBtn.href = contact.mapsUrl;
 
-  // Services List Rendering
-  const servicesList = document.getElementById("servicesList");
-  if (servicesList && Array.isArray(services) && services.length > 0) {
-    servicesList.innerHTML = services.map(service => `
-      <div class="service-tag">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-        <span>${service}</span>
-      </div>
-    `).join("");
+  // Personal Details
+  const linkPersonalWA = document.getElementById("linkPersonalWA");
+  if (linkPersonalWA) linkPersonalWA.href = `https://wa.me/${cleanWA}`;
+  const textPersonalWA = document.getElementById("textPersonalWA");
+  if (textPersonalWA) textPersonalWA.textContent = contact.whatsapp || contact.phone;
+
+  const linkPersonalEmail = document.getElementById("linkPersonalEmail");
+  if (linkPersonalEmail && contact.personalEmail) {
+    linkPersonalEmail.href = `mailto:${contact.personalEmail}`;
+  }
+  const textPersonalEmail = document.getElementById("textPersonalEmail");
+  if (textPersonalEmail && contact.personalEmail) {
+    textPersonalEmail.textContent = contact.personalEmail;
   }
 
-  // Modal QR Title
+  const linkLinkedIn = document.getElementById("linkLinkedIn");
+  const linkLinkedInBtn = document.getElementById("linkLinkedInBtn");
+  const textLinkedIn = document.getElementById("textLinkedIn");
+  const linkedInItem = cardData.social ? cardData.social.find(s => s.platform === "LinkedIn") : null;
+  const linkedInUrl = linkedInItem ? linkedInItem.url : "https://www.linkedin.com/in/ahmed-nabil-9a643984/";
+  if (linkLinkedIn) linkLinkedIn.href = linkedInUrl;
+  if (linkLinkedInBtn) linkLinkedInBtn.href = linkedInUrl;
+  if (textLinkedIn) textLinkedIn.textContent = personal.name;
+
+  // Services Rendering
+  const servicesContainer = document.getElementById("servicesList");
+  if (servicesContainer && Array.isArray(services) && services.length > 0) {
+    servicesContainer.innerHTML = services.map(serviceName => {
+      const meta = SERVICE_METADATA[serviceName] || {
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`,
+        desc: "Specialized logistics & supply chain solution"
+      };
+      return `
+        <div class="service-apple-card">
+          <div class="service-icon-box">
+            ${meta.icon}
+          </div>
+          <div class="service-text-wrap">
+            <h3 class="service-name">${serviceName}</h3>
+            <p class="service-desc">${meta.desc}</p>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  // Modal Header
   const modalQRTitle = document.getElementById("modalQRTitle");
   if (modalQRTitle) {
-    modalQRTitle.textContent = `${personal.prefix ? personal.prefix + " " : ""}${personal.name} vCard`;
+    modalQRTitle.textContent = `${personal.prefix ? personal.prefix + " " : ""}${personal.name}`;
   }
 
-  // Update Page Title & Metadata
-  const fullTitle = `${personal.prefix ? personal.prefix + " " : ""}${personal.name} | ${personal.company} - Digital Business Card`;
-  document.title = fullTitle;
+  // Dynamic Metadata
+  const docTitle = `${personal.name} | ${personal.company} — Digital Business Card`;
+  document.title = docTitle;
 
   const metaTitle = document.querySelector('meta[name="title"]');
-  if (metaTitle) metaTitle.setAttribute("content", `${personal.prefix ? personal.prefix + " " : ""}${personal.name} - ${personal.company}`);
+  if (metaTitle) metaTitle.setAttribute("content", `${personal.name} — ${personal.title} | ${personal.company}`);
 
   const metaDesc = document.querySelector('meta[name="description"]');
-  if (metaDesc) metaDesc.setAttribute("content", `Digital Business Card for ${personal.prefix ? personal.prefix + " " : ""}${personal.name}, ${personal.title} at ${personal.company}.`);
-
-  const ogTitle = document.querySelector('meta[property="og:title"]');
-  if (ogTitle) ogTitle.setAttribute("content", `${personal.prefix ? personal.prefix + " " : ""}${personal.name} | ${personal.company}`);
+  if (metaDesc) metaDesc.setAttribute("content", `Digital Business Card for ${personal.name}, ${personal.title} at ${personal.company}. Specialized Integrated Logistics & Cold Chain Solutions.`);
 }
 
 /**
- * Generate vCard 3.0 Standard String
+ * 4. Generate Standard vCard 3.0 String
  */
 function buildVCardString() {
   const { personal, contact } = cardData;
   const fullName = `${personal.prefix ? personal.prefix + " " : ""}${personal.name}`.trim();
   const cleanPhone = (contact.phoneRaw || contact.phone).replace(/\s+/g, "");
 
-  const vcardLines = [
+  const lines = [
     "BEGIN:VCARD",
     "VERSION:3.0",
     `FN:${fullName}`,
@@ -331,101 +376,89 @@ function buildVCardString() {
   ];
 
   if (contact.personalEmail) {
-    vcardLines.push(`EMAIL;TYPE=HOME,INTERNET:${contact.personalEmail}`);
+    lines.push(`EMAIL;TYPE=HOME,INTERNET:${contact.personalEmail}`);
   }
 
-  if (contact.altPhone) {
-    const cleanAlt = (contact.altPhoneRaw || contact.altPhone).replace(/\s+/g, "");
-    vcardLines.push(`TEL;TYPE=WORK,VOICE:${cleanAlt}`);
+  if (contact.website) {
+    lines.push(`URL;TYPE=WORK:${contact.website}`);
   }
 
-  vcardLines.push(
-    `URL;TYPE=WORK:${contact.website}`,
-    `ADR;TYPE=WORK:;;${contact.location};;;;`,
-    `NOTE:${personal.tagline || ""} - ${personal.bio || ""}`,
-    "END:VCARD"
-  );
+  if (contact.location) {
+    lines.push(`ADR;TYPE=WORK:;;${contact.location};;;;`);
+  }
 
-  return vcardLines.join("\r\n");
+  if (personal.tagline || personal.bio) {
+    lines.push(`NOTE:${personal.tagline || ""} - ${personal.bio || ""}`);
+  }
+
+  lines.push("END:VCARD");
+  return lines.join("\r\n");
 }
 
 /**
- * Initialize QR codes on main page and enlarge modal
+ * 5. Initialize QR Codes
  */
 function initQRCodes() {
   const vcard = buildVCardString();
-  const qrBox = document.getElementById("qrcode");
-  const modalQRBox = document.getElementById("modal-qrcode");
+  const qrMainEl = document.getElementById("qrcode");
+  const qrModalEl = document.getElementById("modal-qrcode");
 
-  qrBox.innerHTML = "";
-  modalQRBox.innerHTML = "";
+  if (!qrMainEl || !qrModalEl || typeof QRCode === "undefined") return;
 
-  if (typeof QRCode !== "undefined") {
-    mainQR = new QRCode(qrBox, {
+  qrMainEl.innerHTML = "";
+  qrModalEl.innerHTML = "";
+
+  try {
+    mainQRInstance = new QRCode(qrMainEl, {
       text: vcard,
-      width: 160,
-      height: 160,
-      colorDark: "#0B0F19",
+      width: 140,
+      height: 140,
+      colorDark: "#1D1D1F",
       colorLight: "#FFFFFF",
       correctLevel: QRCode.CorrectLevel.M
     });
 
-    modalQR = new QRCode(modalQRBox, {
+    modalQRInstance = new QRCode(qrModalEl, {
       text: vcard,
       width: 220,
       height: 220,
-      colorDark: "#0B0F19",
+      colorDark: "#1D1D1F",
       colorLight: "#FFFFFF",
       correctLevel: QRCode.CorrectLevel.M
     });
+  } catch (err) {
+    console.error("QR Code generation error:", err);
   }
 }
 
 /**
- * Refresh QR codes with updated data
- */
-function updateQRCodes() {
-  const vcard = buildVCardString();
-  if (mainQR && typeof mainQR.makeCode === "function") {
-    mainQR.makeCode(vcard);
-  } else {
-    initQRCodes();
-  }
-
-  if (modalQR && typeof modalQR.makeCode === "function") {
-    modalQR.makeCode(vcard);
-  }
-}
-
-/**
- * Download vCard (.vcf) file directly to phone/desktop address book
+ * 6. Download vCard (.vcf)
  */
 function downloadVCard() {
   const vcard = buildVCardString();
   const blob = new Blob([vcard], { type: "text/vcard;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
-  
+
   const sanitizedName = (cardData.personal.name || "Contact").replace(/\s+/g, "_");
   link.href = url;
-  link.setAttribute("download", `${sanitizedName}.vcf`);
+  link.setAttribute("download", `${sanitizedName}_Medscan.vcf`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 
-  showToast("Contact card downloaded!");
+  showToast("Contact card downloaded");
 }
 
 /**
- * Copy to clipboard helper
+ * 7. Copy to Clipboard
  */
 async function copyToClipboard(text, label = "Item") {
   try {
     if (navigator.clipboard && window.isSecureContext) {
       await navigator.clipboard.writeText(text);
     } else {
-      // Fallback
       const textarea = document.createElement("textarea");
       textarea.value = text;
       textarea.style.position = "fixed";
@@ -435,41 +468,43 @@ async function copyToClipboard(text, label = "Item") {
       document.execCommand("copy");
       document.body.removeChild(textarea);
     }
-    showToast(`${label} copied to clipboard!`);
+    showToast(`${label} copied`);
   } catch (err) {
     showToast(`Copied: ${text}`);
   }
 }
 
 /**
- * Display toast notification
+ * 8. Toast Feedback
  */
 function showToast(message) {
   const toast = document.getElementById("toast");
   const toastMsg = document.getElementById("toastMessage");
-  
+
+  if (!toast || !toastMsg) return;
+
   toastMsg.textContent = message;
   toast.classList.add("show");
 
-  if (toastTimeout) clearTimeout(toastTimeout);
-  toastTimeout = setTimeout(() => {
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
     toast.classList.remove("show");
-  }, 2800);
+  }, 2600);
 }
 
 /**
- * Share business card
+ * 9. Native Web Share API
  */
 async function shareCard() {
-  const title = `${cardData.personal.prefix ? cardData.personal.prefix + " " : ""}${cardData.personal.name} - ${cardData.personal.company}`;
-  const text = `Digital Business Card for ${cardData.personal.name} (${cardData.personal.title} at ${cardData.personal.company})`;
+  const title = `${cardData.personal.name} — ${cardData.personal.company}`;
+  const text = `Digital Business Card of ${cardData.personal.name} (${cardData.personal.title} at ${cardData.personal.company})`;
   const url = window.location.href;
 
   if (navigator.share) {
     try {
       await navigator.share({ title, text, url });
-    } catch (e) {
-      if (e.name !== "AbortError") {
+    } catch (err) {
+      if (err.name !== "AbortError") {
         copyToClipboard(url, "Card link");
       }
     }
@@ -479,57 +514,87 @@ async function shareCard() {
 }
 
 /**
- * Setup All Event Listeners & Modals
+ * 10. Footer Year
+ */
+function updateFooterYear() {
+  const elYear = document.getElementById("currentYear");
+  if (elYear) elYear.textContent = new Date().getFullYear();
+}
+
+/**
+ * 11. Event Listeners Setup
  */
 function setupEventListeners() {
-  // Download VCF Buttons
-  document.getElementById("btnQuickVCard").addEventListener("click", downloadVCard);
-  document.getElementById("btnDownloadVCard").addEventListener("click", downloadVCard);
-  document.getElementById("btnMainSaveContact").addEventListener("click", downloadVCard);
-  document.getElementById("btnModalDownloadVCF").addEventListener("click", downloadVCard);
+  // Save Contact / Download vCard
+  const btnQuickVCard = document.getElementById("btnQuickVCard");
+  if (btnQuickVCard) btnQuickVCard.addEventListener("click", downloadVCard);
 
-  // Theme Toggle Button
+  const btnDownloadVCard = document.getElementById("btnDownloadVCard");
+  if (btnDownloadVCard) btnDownloadVCard.addEventListener("click", downloadVCard);
+
+  const btnMainSaveContact = document.getElementById("btnMainSaveContact");
+  if (btnMainSaveContact) btnMainSaveContact.addEventListener("click", downloadVCard);
+
+  const btnModalDownloadVCF = document.getElementById("btnModalDownloadVCF");
+  if (btnModalDownloadVCF) btnModalDownloadVCF.addEventListener("click", downloadVCard);
+
+  // Theme Toggle Buttons (Navbar & Hero Card)
   const btnThemeToggle = document.getElementById("btnThemeToggle");
-  if (btnThemeToggle) {
-    btnThemeToggle.addEventListener("click", cycleTheme);
-  }
+  if (btnThemeToggle) btnThemeToggle.addEventListener("click", toggleTheme);
 
-  // Share Card Button
-  document.getElementById("btnShareCard").addEventListener("click", shareCard);
+  const btnHeroThemeToggle = document.getElementById("btnHeroThemeToggle");
+  if (btnHeroThemeToggle) btnHeroThemeToggle.addEventListener("click", toggleTheme);
 
-  // QR Enlarge Modal
+  // Share Card Buttons (Navbar & Hero Card)
+  const btnShareCard = document.getElementById("btnShareCard");
+  if (btnShareCard) btnShareCard.addEventListener("click", shareCard);
+
+  const btnHeroShare = document.getElementById("btnHeroShare");
+  if (btnHeroShare) btnHeroShare.addEventListener("click", shareCard);
+
+  // QR Modal Handlers
   const modalQR = document.getElementById("modalQR");
-  const btnEnlarge = document.getElementById("btnEnlargeQR");
+  const btnEnlargeQR = document.getElementById("btnEnlargeQR");
   const qrBoxWrap = document.getElementById("qrBoxWrap");
 
-  const openQRModal = () => modalQR.classList.add("active");
-  btnEnlarge.addEventListener("click", openQRModal);
-  qrBoxWrap.addEventListener("click", openQRModal);
+  const openModal = () => {
+    if (modalQR) modalQR.classList.add("active");
+  };
 
-  // Modal Close Buttons
-  document.querySelectorAll(".modal-close").forEach((btn) => {
+  if (btnEnlargeQR) btnEnlargeQR.addEventListener("click", openModal);
+  if (qrBoxWrap) {
+    qrBoxWrap.addEventListener("click", openModal);
+    qrBoxWrap.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        openModal();
+      }
+    });
+  }
+
+  // Modal Close Handlers
+  document.querySelectorAll(".modal-close-btn, [data-close]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const modalId = btn.getAttribute("data-close");
-      if (modalId) {
-        document.getElementById(modalId).classList.remove("active");
-      }
+      const targetModal = modalId ? document.getElementById(modalId) : btn.closest(".apple-modal-overlay");
+      if (targetModal) targetModal.classList.remove("active");
     });
   });
 
-  // Close modals on backdrop click
-  document.querySelectorAll(".modal-overlay").forEach((overlay) => {
-    overlay.addEventListener("click", (e) => {
-      if (e.target === overlay) {
-        overlay.classList.remove("active");
+  // Close on background click
+  if (modalQR) {
+    modalQR.addEventListener("click", (e) => {
+      if (e.target === modalQR) {
+        modalQR.classList.remove("active");
       }
     });
-  });
+  }
 
-  // Close modals on Escape key
+  // Close on Escape Key
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
-      document.querySelectorAll(".modal-overlay.active").forEach((overlay) => {
-        overlay.classList.remove("active");
+      document.querySelectorAll(".apple-modal-overlay.active").forEach((modal) => {
+        modal.classList.remove("active");
       });
     }
   });
@@ -538,16 +603,47 @@ function setupEventListeners() {
   document.querySelectorAll(".copy-btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
+      e.preventDefault();
       const type = btn.getAttribute("data-copy");
       if (type === "phone") {
         copyToClipboard(cardData.contact.phone, "Phone number");
-      } else if (type === "altPhone") {
-        copyToClipboard(cardData.contact.altPhone, "Office desk number");
       } else if (type === "email") {
         copyToClipboard(cardData.contact.email, "Corporate email");
       } else if (type === "personalEmail") {
         copyToClipboard(cardData.contact.personalEmail, "Personal email");
+      } else if (type === "whatsapp") {
+        copyToClipboard(cardData.contact.whatsapp || cardData.contact.phone, "WhatsApp number");
       }
     });
   });
+}
+
+/**
+ * 12. Navbar Scroll Reveal Controller
+ * Reveals floating Apple navbar only when scrolled down past the hero card
+ */
+function setupScrollNavbar() {
+  const navbar = document.getElementById("appleNavbar");
+  const heroSection = document.querySelector(".hero-section");
+  if (!navbar || !heroSection) return;
+
+  let ticking = false;
+
+  const onScroll = () => {
+    if (!ticking) {
+      window.requestAnimationFrame(() => {
+        const heroBottom = heroSection.offsetTop + (heroSection.offsetHeight * 0.55);
+        if (window.scrollY > heroBottom) {
+          navbar.classList.add("visible");
+        } else {
+          navbar.classList.remove("visible");
+        }
+        ticking = false;
+      });
+      ticking = true;
+    }
+  };
+
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
 }

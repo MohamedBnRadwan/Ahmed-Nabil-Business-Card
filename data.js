@@ -9,8 +9,8 @@ window.CARD_DATA = {
     "title": "Operations manager",
     "department": "Logistics Operations",
     "company": "Medscan Terminal",
-    "tagline": "Specialized Integrated Logistics & Cold Chain Solutions",
-    "bio": "Dedicated operations leader specializing in freight forwarding, terminal warehousing, supply chain optimization, and specialized logistics across Saudi Arabia & the GCC.",
+    "tagline": "Logistics & Clearance Operations | Fleet & Transport Management",
+    "bio": "Logistics & Clearance Operations | Fleet & Transport Management Dedicated operations leader specializing in freight forwarding, terminal warehousing, supply chain optimization, and specialized logistics across Saudi Arabia & the GCC.",
     "profileImage": "img/profile.png",
     "companyLogo": "img/medscan_terminal_company_logo-2.jpg",
     "companyBadge": "img/medscan_terminal_company_logo.jpg"
