@@ -1,7 +1,11 @@
-{
+/**
+ * Dynamic Data Source for Ahmed Nabil Digital Business Card
+ * Allows 100% offline & local file:/// protocol compatibility alongside data.json
+ */
+window.CARD_DATA = {
   "personal": {
     "name": "Ahmed Nabil",
-    "prefix": "Mr.",
+    "prefix": "Eng.",
     "title": "Operations & Commercial",
     "department": "Logistics & Terminal Operations",
     "company": "Medscan Terminal",
@@ -62,4 +66,4 @@
     "Customs Clearance",
     "Freight Forwarding & Transport"
   ]
-}
+};

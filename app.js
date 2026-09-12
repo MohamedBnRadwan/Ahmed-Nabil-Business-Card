@@ -3,12 +3,12 @@
  * Medscan Terminal
  */
 
-// Default Fallback Data (ensures 100% offline & file:// protocol compatibility)
+// Default Fallback Data (ensures 100% offline & local file:// protocol compatibility)
 const DEFAULT_DATA = {
   personal: {
     name: "Ahmed Nabil",
     prefix: "Eng.",
-    title: "Operations & Commercial Manager",
+    title: "Operations & Commercial",
     department: "Logistics & Terminal Operations",
     company: "Medscan Terminal",
     tagline: "Specialized Integrated Logistics & Cold Chain Solutions",
@@ -18,15 +18,15 @@ const DEFAULT_DATA = {
     companyBadge: "img/medscan_terminal_company_logo.jpg"
   },
   contact: {
-    phone: "+966 50 123 4567",
-    phoneRaw: "+966501234567",
+    phone: "+966 56 104 9774",
+    phoneRaw: "+966561049774",
     altPhone: "+966 13 800 0000",
     altPhoneRaw: "+966138000000",
-    whatsapp: "+966 50 123 4567",
-    whatsappRaw: "966501234567",
-    email: "ahmed.nabil@medscan.com.sa",
-    website: "https://medscan.com.sa",
-    websiteDisplay: "www.medscan.com.sa",
+    whatsapp: "+966 56 104 9774",
+    whatsappRaw: "966561049774",
+    email: "ahmed.nabil@medscansa.com",
+    website: "https://medscansa.com",
+    websiteDisplay: "www.medscansa.com",
     location: "Dammam 2nd Industrial City, Eastern Province, Saudi Arabia",
     mapsUrl: "https://maps.google.com/?q=Medscan+Terminal+Saudi+Arabia"
   },
@@ -34,25 +34,25 @@ const DEFAULT_DATA = {
     {
       platform: "LinkedIn",
       icon: "linkedin",
-      url: "https://www.linkedin.com/in/ahmed-nabil",
+      url: "https://www.linkedin.com/in/ahmed-nabil-9a643984/",
       label: "Connect on LinkedIn"
     },
     {
       platform: "WhatsApp",
       icon: "message-circle",
-      url: "https://wa.me/966501234567?text=Hello%20Ahmed,%20I%20would%20like%20to%20connect%20regarding%20Medscan%20Terminal%20services.",
+      url: "https://wa.me/966561049774",
       label: "Chat on WhatsApp"
     },
     {
       platform: "Email",
       icon: "mail",
-      url: "mailto:ahmed.nabil@medscan.com.sa",
+      url: "mailto:ahmed.nabil@medscansa.com",
       label: "Send Email"
     },
     {
       platform: "Website",
       icon: "globe",
-      url: "https://medscan.com.sa",
+      url: "https://medscansa.com",
       label: "Visit Medscan Website"
     },
     {
@@ -71,7 +71,7 @@ const DEFAULT_DATA = {
 };
 
 // Current active card state
-let cardData = JSON.parse(JSON.stringify(DEFAULT_DATA));
+let cardData = typeof window !== "undefined" && window.CARD_DATA ? JSON.parse(JSON.stringify(window.CARD_DATA)) : JSON.parse(JSON.stringify(DEFAULT_DATA));
 let mainQR = null;
 let modalQR = null;
 let toastTimeout = null;
@@ -95,7 +95,7 @@ function initTheme() {
 
   // Listen to OS / System color scheme changes
   const systemPref = window.matchMedia("(prefers-color-scheme: dark)");
-  systemPref.addEventListener("change", (e) => {
+  systemPref.addEventListener("change", () => {
     if (currentTheme === "system") {
       applyTheme("system", false);
     }
@@ -159,70 +159,145 @@ function cycleTheme() {
 }
 
 /**
- * Load data from data.json if available via HTTP/fetch, or keep fallback
+ * Load data from data.json (HTTP/HTTPS/DevServer) or data.js (Offline/file:// protocol)
  */
 async function loadData() {
+  // 1. Try fetching data.json dynamically
   try {
-    const response = await fetch("data.json");
+    const response = await fetch("data.json?cache_bust=" + Date.now());
     if (response.ok) {
       const json = await response.json();
-      cardData = { ...cardData, ...json };
+      if (json && json.personal) {
+        cardData = json;
+        return;
+      }
     }
   } catch (e) {
-    console.info("Using embedded default data source (Local/Offline mode).");
+    // Expected on local file:/// protocol
   }
+
+  // 2. Check window.CARD_DATA (from data.js)
+  if (typeof window !== "undefined" && window.CARD_DATA && window.CARD_DATA.personal) {
+    cardData = window.CARD_DATA;
+    return;
+  }
+
+  // 3. Fallback to DEFAULT_DATA
+  cardData = DEFAULT_DATA;
 }
 
 /**
  * Render all card elements dynamically from current cardData
  */
 function renderCard() {
-  const { personal, contact } = cardData;
+  if (!cardData || !cardData.personal || !cardData.contact) return;
+  const { personal, contact, services } = cardData;
 
   // Personal Info
-  document.getElementById("profileName").textContent = personal.name;
-  document.getElementById("profilePrefix").textContent = personal.prefix || "";
-  document.getElementById("profilePrefix").style.display = personal.prefix ? "inline-block" : "none";
-  document.getElementById("profileTitle").textContent = personal.title;
-  document.getElementById("profileDepartment").textContent = personal.department || "";
-  document.getElementById("profileBio").textContent = personal.bio || "";
+  const elName = document.getElementById("profileName");
+  if (elName) elName.textContent = personal.name;
+
+  const elPrefix = document.getElementById("profilePrefix");
+  if (elPrefix) {
+    elPrefix.textContent = personal.prefix || "";
+    elPrefix.style.display = personal.prefix ? "inline-block" : "none";
+  }
+
+  const elTitle = document.getElementById("profileTitle");
+  if (elTitle) elTitle.textContent = personal.title;
+
+  const elDept = document.getElementById("profileDepartment");
+  if (elDept) elDept.textContent = personal.department || "";
+
+  const elBio = document.getElementById("profileBio");
+  if (elBio) elBio.textContent = personal.bio || "";
   
-  if (personal.profileImage) {
-    document.getElementById("profileImage").src = personal.profileImage;
+  const elAvatar = document.getElementById("profileImage");
+  if (elAvatar && personal.profileImage) {
+    elAvatar.src = personal.profileImage;
+    elAvatar.alt = personal.name;
   }
-  if (personal.companyLogo) {
-    document.getElementById("companyLogo").src = personal.companyLogo;
+
+  const elLogo = document.getElementById("companyLogo");
+  if (elLogo && personal.companyLogo) {
+    elLogo.src = personal.companyLogo;
+    elLogo.alt = personal.company;
   }
+
+  // Clean strings for URLs
+  const cleanPhone = (contact.phoneRaw || contact.phone || "").replace(/\s+/g, "");
+  const cleanAlt = (contact.altPhoneRaw || contact.altPhone || "").replace(/\s+/g, "");
+  const cleanWA = (contact.whatsappRaw || contact.whatsapp || "").replace(/[^0-9]/g, "");
 
   // Quick Action Buttons
-  const cleanPhone = (contact.phoneRaw || contact.phone).replace(/\s+/g, "");
-  const cleanAlt = (contact.altPhoneRaw || contact.altPhone).replace(/\s+/g, "");
-  const cleanWA = (contact.whatsappRaw || contact.whatsapp).replace(/[^0-9]/g, "");
+  const btnCall = document.getElementById("btnQuickCall");
+  if (btnCall) btnCall.href = `tel:${cleanPhone}`;
 
-  document.getElementById("btnQuickCall").href = `tel:${cleanPhone}`;
-  document.getElementById("btnQuickWhatsApp").href = `https://wa.me/${cleanWA}?text=Hello%20Ahmed,%20I%20would%20like%20to%20connect%20regarding%20Medscan%20Terminal%20services.`;
-  document.getElementById("btnQuickEmail").href = `mailto:${contact.email}?subject=Inquiry%20from%20Digital%20Business%20Card`;
+  const btnWA = document.getElementById("btnQuickWhatsApp");
+  if (btnWA) btnWA.href = `https://wa.me/${cleanWA}`;
+
+  const btnEmail = document.getElementById("btnQuickEmail");
+  if (btnEmail) btnEmail.href = `mailto:${contact.email}`;
 
   // Contact list items
-  document.getElementById("linkPhone").href = `tel:${cleanPhone}`;
-  document.getElementById("textPhone").textContent = contact.phone;
+  const linkPhone = document.getElementById("linkPhone");
+  if (linkPhone) linkPhone.href = `tel:${cleanPhone}`;
+  const textPhone = document.getElementById("textPhone");
+  if (textPhone) textPhone.textContent = contact.phone;
 
-  document.getElementById("linkAltPhone").href = `tel:${cleanAlt}`;
-  document.getElementById("textAltPhone").textContent = contact.altPhone;
+  const linkAltPhone = document.getElementById("linkAltPhone");
+  if (linkAltPhone) linkAltPhone.href = `tel:${cleanAlt}`;
+  const textAltPhone = document.getElementById("textAltPhone");
+  if (textAltPhone) textAltPhone.textContent = contact.altPhone;
 
-  document.getElementById("linkEmail").href = `mailto:${contact.email}`;
-  document.getElementById("textEmail").textContent = contact.email;
+  const linkEmail = document.getElementById("linkEmail");
+  if (linkEmail) linkEmail.href = `mailto:${contact.email}`;
+  const textEmail = document.getElementById("textEmail");
+  if (textEmail) textEmail.textContent = contact.email;
 
-  document.getElementById("linkWebsite").href = contact.website;
-  document.getElementById("textWebsite").textContent = contact.websiteDisplay || contact.website.replace(/^https?:\/\//, "");
-  document.getElementById("linkWebsiteBtn").href = contact.website;
+  const linkWebsite = document.getElementById("linkWebsite");
+  if (linkWebsite) linkWebsite.href = contact.website;
+  const textWebsite = document.getElementById("textWebsite");
+  if (textWebsite) textWebsite.textContent = contact.websiteDisplay || contact.website.replace(/^https?:\/\//, "");
+  const linkWebsiteBtn = document.getElementById("linkWebsiteBtn");
+  if (linkWebsiteBtn) linkWebsiteBtn.href = contact.website;
 
-  document.getElementById("linkLocation").href = contact.mapsUrl;
-  document.getElementById("textLocation").textContent = contact.location;
-  document.getElementById("linkLocationBtn").href = contact.mapsUrl;
+  const linkLocation = document.getElementById("linkLocation");
+  if (linkLocation) linkLocation.href = contact.mapsUrl;
+  const textLocation = document.getElementById("textLocation");
+  if (textLocation) textLocation.textContent = contact.location;
+  const linkLocationBtn = document.getElementById("linkLocationBtn");
+  if (linkLocationBtn) linkLocationBtn.href = contact.mapsUrl;
 
-  // Update Page Title
-  document.title = `${personal.prefix ? personal.prefix + " " : ""}${personal.name} | ${personal.company} - Digital Business Card`;
+  // Services List Rendering
+  const servicesList = document.getElementById("servicesList");
+  if (servicesList && Array.isArray(services) && services.length > 0) {
+    servicesList.innerHTML = services.map(service => `
+      <div class="service-tag">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <span>${service}</span>
+      </div>
+    `).join("");
+  }
+
+  // Modal QR Title
+  const modalQRTitle = document.getElementById("modalQRTitle");
+  if (modalQRTitle) {
+    modalQRTitle.textContent = `${personal.prefix ? personal.prefix + " " : ""}${personal.name} vCard`;
+  }
+
+  // Update Page Title & Metadata
+  const fullTitle = `${personal.prefix ? personal.prefix + " " : ""}${personal.name} | ${personal.company} - Digital Business Card`;
+  document.title = fullTitle;
+
+  const metaTitle = document.querySelector('meta[name="title"]');
+  if (metaTitle) metaTitle.setAttribute("content", `${personal.prefix ? personal.prefix + " " : ""}${personal.name} - ${personal.company}`);
+
+  const metaDesc = document.querySelector('meta[name="description"]');
+  if (metaDesc) metaDesc.setAttribute("content", `Digital Business Card for ${personal.prefix ? personal.prefix + " " : ""}${personal.name}, ${personal.title} at ${personal.company}.`);
+
+  const ogTitle = document.querySelector('meta[property="og:title"]');
+  if (ogTitle) ogTitle.setAttribute("content", `${personal.prefix ? personal.prefix + " " : ""}${personal.name} | ${personal.company}`);
 }
 
 /**
@@ -407,54 +482,6 @@ function setupEventListeners() {
   const openQRModal = () => modalQR.classList.add("active");
   btnEnlarge.addEventListener("click", openQRModal);
   qrBoxWrap.addEventListener("click", openQRModal);
-
-  // Live Editor Drawer / Modal
-  const modalEditor = document.getElementById("modalEditor");
-  const btnOpenEditor = document.getElementById("btnOpenEditor");
-  const btnToggleFooter = document.getElementById("btnToggleEditorFooter");
-  const editorForm = document.getElementById("editorForm");
-  const btnResetData = document.getElementById("btnResetData");
-
-  const openEditor = () => {
-    document.getElementById("editName").value = cardData.personal.name;
-    document.getElementById("editPrefix").value = cardData.personal.prefix || "";
-    document.getElementById("editTitle").value = cardData.personal.title;
-    document.getElementById("editDepartment").value = cardData.personal.department || "";
-    document.getElementById("editPhone").value = cardData.contact.phone;
-    document.getElementById("editEmail").value = cardData.contact.email;
-    document.getElementById("editBio").value = cardData.personal.bio || "";
-    modalEditor.classList.add("active");
-  };
-
-  btnOpenEditor.addEventListener("click", openEditor);
-  btnToggleFooter.addEventListener("click", openEditor);
-
-  // Editor Form Submit (Realtime Live Card + QR Update)
-  editorForm.addEventListener("submit", (e) => {
-    e.preventDefault();
-    cardData.personal.name = document.getElementById("editName").value.trim();
-    cardData.personal.prefix = document.getElementById("editPrefix").value.trim();
-    cardData.personal.title = document.getElementById("editTitle").value.trim();
-    cardData.personal.department = document.getElementById("editDepartment").value.trim();
-    cardData.contact.phone = document.getElementById("editPhone").value.trim();
-    cardData.contact.phoneRaw = document.getElementById("editPhone").value.trim();
-    cardData.contact.email = document.getElementById("editEmail").value.trim();
-    cardData.personal.bio = document.getElementById("editBio").value.trim();
-
-    renderCard();
-    updateQRCodes();
-    modalEditor.classList.remove("active");
-    showToast("Business card and QR updated successfully!");
-  });
-
-  // Reset to original data
-  btnResetData.addEventListener("click", () => {
-    cardData = JSON.parse(JSON.stringify(DEFAULT_DATA));
-    renderCard();
-    updateQRCodes();
-    modalEditor.classList.remove("active");
-    showToast("Reset to default contact details.");
-  });
 
   // Modal Close Buttons
   document.querySelectorAll(".modal-close").forEach((btn) => {
