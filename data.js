@@ -11,7 +11,7 @@ window.CARD_DATA = {
     "company": "Medscan Terminal",
     "tagline": "Specialized Integrated Logistics & Cold Chain Solutions",
     "bio": "Dedicated operations leader specializing in freight forwarding, terminal warehousing, supply chain optimization, and specialized logistics across Saudi Arabia & the GCC.",
-    "profileImage": "img/profile.jpeg",
+    "profileImage": "img/profile.png",
     "companyLogo": "img/medscan_terminal_company_logo-2.jpg",
     "companyBadge": "img/medscan_terminal_company_logo.jpg"
   },
@@ -21,7 +21,7 @@ window.CARD_DATA = {
     "whatsapp": "+966 56 104 9774",
     "whatsappRaw": "966561049774",
     "email": "ahmed.n@medscansa.com",
-    "personalEmail": "Ahmednabilm574@gmail.com",
+    "personalEmail": "ahmednabilm574@gmail.com",
     "website": "https://medscansa.com",
     "websiteDisplay": "www.medscansa.com",
     "location": "MEDSCAN TERMINAL",
