@@ -66,9 +66,8 @@ window.CARD_DATA = {
     }
   ],
   "services": [
-    "Terminal Storage & Handling",
-    "Cold Chain Warehousing",
     "Customs Clearance",
-    "Freight Forwarding & Transport"
+    "Freight Forwarding & Transport",
+    "Terminal Storage & Handling"
   ]
 };
